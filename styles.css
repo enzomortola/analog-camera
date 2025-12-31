@@ -849,6 +849,13 @@ body {
     transition: opacity 0.15s ease;
 }
 
+/* Rotar imágenes landscape para mostrarlas en portrait */
+.viewer-image.rotate-90 {
+    transform: rotate(90deg);
+    max-width: 80vh;
+    max-height: 95vw;
+}
+
 .photo-counter {
     position: absolute;
     top: 20px;

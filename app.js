@@ -233,6 +233,15 @@ class AnalogCamera {
 
         cropFrame.style.width = `${frameWidth}px`;
         cropFrame.style.height = `${frameHeight}px`;
+
+        // Guardar dimensiones del frame para usar en capturePhoto
+        this.cropFrameDimensions = {
+            width: frameWidth,
+            height: frameHeight,
+            containerWidth: containerRect.width,
+            containerHeight: containerRect.height,
+            targetRatio: targetRatio
+        };
     }
 
     toggleMode() {
@@ -285,18 +294,53 @@ class AnalogCamera {
     startPreviewLoop() {
         const loop = () => {
             if (this.video.readyState === this.video.HAVE_ENOUGH_DATA) {
-                this.canvas.width = this.video.videoWidth;
-                this.canvas.height = this.video.videoHeight;
+                // Usar dimensiones del frame si están disponibles
+                if (this.cropFrameDimensions) {
+                    const scaleX = this.video.videoWidth / this.cropFrameDimensions.containerWidth;
+                    const scaleY = this.video.videoHeight / this.cropFrameDimensions.containerHeight;
 
-                // Draw and apply filter
-                this.ctx.save();
-                if (this.facingMode === 'user') {
-                    this.ctx.scale(-1, 1);
-                    this.ctx.drawImage(this.video, -this.canvas.width, 0);
+                    // Canvas con las dimensiones exactas del frame visual
+                    const canvasWidth = this.cropFrameDimensions.width * scaleX;
+                    const canvasHeight = this.cropFrameDimensions.height * scaleY;
+
+                    this.canvas.width = canvasWidth;
+                    this.canvas.height = canvasHeight;
+
+                    // Calcular qué porción del video dibujar (centrado)
+                    const sourceX = (this.video.videoWidth - canvasWidth) / 2;
+                    const sourceY = (this.video.videoHeight - canvasHeight) / 2;
+
+                    // Dibujar solo la porción visible
+                    this.ctx.save();
+                    if (this.facingMode === 'user') {
+                        this.ctx.scale(-1, 1);
+                        this.ctx.drawImage(
+                            this.video,
+                            sourceX, sourceY, canvasWidth, canvasHeight,
+                            -canvasWidth, 0, canvasWidth, canvasHeight
+                        );
+                    } else {
+                        this.ctx.drawImage(
+                            this.video,
+                            sourceX, sourceY, canvasWidth, canvasHeight,
+                            0, 0, canvasWidth, canvasHeight
+                        );
+                    }
+                    this.ctx.restore();
                 } else {
-                    this.ctx.drawImage(this.video, 0, 0);
+                    // Fallback: canvas completo
+                    this.canvas.width = this.video.videoWidth;
+                    this.canvas.height = this.video.videoHeight;
+
+                    this.ctx.save();
+                    if (this.facingMode === 'user') {
+                        this.ctx.scale(-1, 1);
+                        this.ctx.drawImage(this.video, -this.canvas.width, 0);
+                    } else {
+                        this.ctx.drawImage(this.video, 0, 0);
+                    }
+                    this.ctx.restore();
                 }
-                this.ctx.restore();
 
                 // Apply selected filter
                 const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
@@ -591,77 +635,14 @@ class AnalogCamera {
         this.lightLeak.classList.add('active');
         setTimeout(() => this.lightLeak.classList.remove('active'), 800);
 
-        // Calculate final dimensions based on aspect ratio and orientation
-        const ratios = {
-            '3/2': 3 / 2,
-            '4/3': 4 / 3,
-            '1/1': 1,
-            '16/9': 16 / 9
-        };
-
-        let targetRatio = ratios[this.currentRatio];
-
-        // Invertir ratio si está en portrait
-        if (this.orientation === 'portrait' && this.currentRatio !== '1/1') {
-            targetRatio = 1 / targetRatio;
-        }
-
-        const sourceWidth = this.canvas.width;
-        const sourceHeight = this.canvas.height;
-        const sourceRatio = sourceWidth / sourceHeight;
-
-        let cropX = 0;
-        let cropY = 0;
-        let cropWidth = sourceWidth;
-        let cropHeight = sourceHeight;
-
-        // Calculate crop dimensions to match target ratio
-        if (sourceRatio > targetRatio) {
-            // Source is wider, crop width
-            cropWidth = sourceHeight * targetRatio;
-            cropX = (sourceWidth - cropWidth) / 2;
-        } else {
-            // Source is taller, crop height
-            cropHeight = sourceWidth / targetRatio;
-            cropY = (sourceHeight - cropHeight) / 2;
-        }
-
-        // Create capture canvas with correct aspect ratio
-        // Si está en landscape, rotar para guardar en portrait
-        const shouldRotate = this.orientation === 'landscape' && this.currentRatio !== '1/1';
-
-        let finalWidth, finalHeight;
-        if (shouldRotate) {
-            // Swap dimensions para portrait
-            finalWidth = cropHeight;
-            finalHeight = cropWidth;
-        } else {
-            finalWidth = cropWidth;
-            finalHeight = cropHeight;
-        }
-
+        // El canvas YA tiene el tamaño correcto del frame, capturamos todo sin recortar
         const captureCanvas = document.createElement('canvas');
-        captureCanvas.width = finalWidth;
-        captureCanvas.height = finalHeight;
+        captureCanvas.width = this.canvas.width;
+        captureCanvas.height = this.canvas.height;
         const captureCtx = captureCanvas.getContext('2d');
 
-        if (shouldRotate) {
-            // Rotar 90° clockwise para landscape → portrait
-            captureCtx.translate(finalWidth, 0);
-            captureCtx.rotate(Math.PI / 2);
-            captureCtx.drawImage(
-                this.canvas,
-                cropX, cropY, cropWidth, cropHeight,
-                0, 0, cropWidth, cropHeight
-            );
-        } else {
-            // Draw cropped filtered image normal
-            captureCtx.drawImage(
-                this.canvas,
-                cropX, cropY, cropWidth, cropHeight,
-                0, 0, cropWidth, cropHeight
-            );
-        }
+        // Copiar canvas completo tal cual está (sin rotar)
+        captureCtx.drawImage(this.canvas, 0, 0);
 
         // Add film grain overlay
         this.addFilmGrain(captureCtx, captureCanvas.width, captureCanvas.height);
@@ -679,6 +660,7 @@ class AnalogCamera {
             data: imageData,
             filter: this.currentFilter,
             ratio: this.currentRatio,
+            orientation: this.orientation, // Guardar orientación de captura
             date: new Date().toISOString()
         });
 
@@ -893,9 +875,13 @@ class AnalogCamera {
         const viewer = document.createElement('div');
         viewer.className = 'image-viewer active';
 
+        // Determinar si necesita rotación (capturada en landscape, mostramos en portrait)
+        const needsRotation = photo.orientation === 'landscape' && photo.ratio !== '1/1' && !photo.isVideo;
+        const rotationClass = needsRotation ? 'rotate-90' : '';
+
         const mediaElement = photo.isVideo ?
             `<video src="${photo.data}" controls autoplay class="viewer-image"></video>` :
-            `<img src="${photo.data}" alt="Full photo" class="viewer-image">`;
+            `<img src="${photo.data}" alt="Full photo" class="viewer-image ${rotationClass}">`;
 
         viewer.innerHTML = `
             <div class="photo-counter">${currentIndex + 1} / ${this.photos.length}</div>
@@ -923,9 +909,13 @@ class AnalogCamera {
             mediaEl.style.opacity = '0';
             setTimeout(() => {
                 const newPhoto = this.photos[currentIndex];
+
+                const needsRotation = newPhoto.orientation === 'landscape' && newPhoto.ratio !== '1/1' && !newPhoto.isVideo;
+                const rotationClass = needsRotation ? 'rotate-90' : '';
+
                 const newMediaElement = newPhoto.isVideo ?
                     `<video src="${newPhoto.data}" controls autoplay class="viewer-image"></video>` :
-                    `<img src="${newPhoto.data}" alt="Full photo" class="viewer-image">`;
+                    `<img src="${newPhoto.data}" alt="Full photo" class="viewer-image ${rotationClass}">`;
 
                 // Replace media element
                 const oldMediaEl = viewer.querySelector('.viewer-image');

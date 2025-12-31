@@ -1,4 +1,4 @@
-const CACHE_NAME = 'analog-camera-v6';
+const CACHE_NAME = 'analog-camera-v9';
 const urlsToCache = [
     './',
     './index.html',
