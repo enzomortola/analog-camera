@@ -75,6 +75,47 @@ body {
     }
 }
 
+/* Ratio Selector */
+.ratio-selector {
+    display: flex;
+    gap: 8px;
+    padding: 8px 16px;
+    background: linear-gradient(180deg, rgba(20, 20, 20, 0.95) 0%, rgba(15, 15, 15, 1) 100%);
+    border-bottom: 1px solid #1a1a1a;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.ratio-selector::-webkit-scrollbar {
+    display: none;
+}
+
+.ratio-btn {
+    padding: 6px 14px;
+    border: 1px solid #333;
+    border-radius: 6px;
+    background: rgba(30, 30, 30, 0.8);
+    color: var(--text-muted);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.ratio-btn:hover {
+    border-color: var(--accent-gold);
+    color: var(--text-light);
+}
+
+.ratio-btn.active {
+    background: linear-gradient(135deg, var(--accent-gold), #b8943f);
+    border-color: var(--accent-gold);
+    color: #000;
+    font-weight: bold;
+    box-shadow: 0 2px 8px rgba(212, 168, 84, 0.3);
+}
+
 .camera-container {
     flex: 1;
     position: relative;
@@ -83,6 +124,25 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    aspect-ratio: 3 / 2;
+    max-height: calc(100vh - 320px);
+}
+
+/* Dynamic aspect ratios */
+.camera-container[data-ratio="3/2"] {
+    aspect-ratio: 3 / 2;
+}
+
+.camera-container[data-ratio="4/3"] {
+    aspect-ratio: 4 / 3;
+}
+
+.camera-container[data-ratio="1/1"] {
+    aspect-ratio: 1 / 1;
+}
+
+.camera-container[data-ratio="16/9"] {
+    aspect-ratio: 16 / 9;
 }
 
 #videoElement {
@@ -90,12 +150,6 @@ body {
     height: 100%;
     object-fit: cover;
     transform: scaleX(-1);
-}
-
-/* Force 3:2 aspect ratio container */
-.camera-container {
-    aspect-ratio: 3 / 2;
-    max-height: calc(100vh - 280px);
 }
 
 #previewCanvas {

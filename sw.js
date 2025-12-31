@@ -1,12 +1,12 @@
-const CACHE_NAME = 'analog-camera-v2';
+const CACHE_NAME = 'analog-camera-v3';
 const urlsToCache = [
     './',
     './index.html',
     './styles.css',
     './app.js',
     './manifest.json',
-    './icon-192.svg',
-    './icon-512.svg'
+    './icon-192.png',
+    './icon-512.png'
 ];
 
 // Install - cache files

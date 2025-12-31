@@ -8,9 +8,9 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#d4a854">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Analog Camera</title>
+    <title>Camara Solcito</title>
     <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="icon-192.svg">
+    <link rel="apple-touch-icon" href="icon-192.png">
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 </head>
@@ -22,7 +22,14 @@
             <div class="film-counter" id="filmCounter">36</div>
         </header>
 
-        <div class="camera-container">
+        <div class="ratio-selector">
+            <button class="ratio-btn active" data-ratio="3/2" title="35mm Film">3:2</button>
+            <button class="ratio-btn" data-ratio="4/3" title="Classic">4:3</button>
+            <button class="ratio-btn" data-ratio="1/1" title="Instagram">1:1</button>
+            <button class="ratio-btn" data-ratio="16/9" title="Widescreen">16:9</button>
+        </div>
+
+        <div class="camera-container" id="cameraContainer">
             <video id="videoElement" autoplay playsinline></video>
             <canvas id="previewCanvas"></canvas>
             <div class="film-grain"></div>

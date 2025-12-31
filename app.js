@@ -16,6 +16,7 @@ class AnalogCamera {
         this.filmCounter = document.getElementById('filmCounter');
 
         this.currentFilter = 'kodak';
+        this.currentRatio = localStorage.getItem('aspectRatio') || '3/2';
         this.facingMode = 'environment'; // Start with back camera
         this.stream = null;
         this.photos = JSON.parse(localStorage.getItem('analogPhotos') || '[]');
@@ -47,6 +48,7 @@ class AnalogCamera {
     async init() {
         this.updateDateStamp();
         this.updateFilmCounter();
+        this.setAspectRatio(this.currentRatio);
         this.bindEvents();
         await this.startCamera();
         this.startPreviewLoop();
@@ -77,6 +79,16 @@ class AnalogCamera {
                 setTimeout(() => {
                     e.target.classList.remove('show-tooltip');
                 }, 1000);
+            });
+        });
+
+        // Ratio buttons
+        document.querySelectorAll('.ratio-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.ratio-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                const ratio = e.target.dataset.ratio;
+                this.setAspectRatio(ratio);
             });
         });
 
@@ -127,6 +139,22 @@ class AnalogCamera {
                 document.getElementById(`${param}Value`).textContent = '0';
             });
             localStorage.setItem('customFilterSettings', JSON.stringify(this.customSettings));
+        });
+    }
+
+    setAspectRatio(ratio) {
+        this.currentRatio = ratio;
+        const container = document.getElementById('cameraContainer');
+        container.setAttribute('data-ratio', ratio);
+        localStorage.setItem('aspectRatio', ratio);
+
+        // Update active button
+        document.querySelectorAll('.ratio-btn').forEach(btn => {
+            if (btn.dataset.ratio === ratio) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
         });
     }
 
