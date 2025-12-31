@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Analog Camera</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <h1>📷 Analog Cam</h1>
+            <div class="film-counter" id="filmCounter">36</div>
+        </header>
+
+        <div class="camera-container">
+            <video id="videoElement" autoplay playsinline></video>
+            <canvas id="previewCanvas"></canvas>
+            <div class="film-grain"></div>
+            <div class="vignette"></div>
+            <div class="light-leak" id="lightLeak"></div>
+            <div class="date-stamp" id="dateStamp"></div>
+        </div>
+
+        <div class="filter-selector">
+            <button class="filter-btn active" data-filter="kodak">Kodak Portra</button>
+            <button class="filter-btn" data-filter="fuji">Fuji 400H</button>
+            <button class="filter-btn" data-filter="cinestill">CineStill 800T</button>
+            <button class="filter-btn" data-filter="ilford">Ilford HP5</button>
+            <button class="filter-btn" data-filter="agfa">Agfa Vista</button>
+            <button class="filter-btn" data-filter="lomography">Lomo Purple</button>
+        </div>
+
+        <div class="controls">
+            <button class="control-btn" id="switchCamera">
+                <span>🔄</span>
+            </button>
+            <button class="shutter-btn" id="captureBtn">
+                <div class="shutter-inner"></div>
+            </button>
+            <button class="control-btn" id="galleryBtn">
+                <span>🖼️</span>
+            </button>
+        </div>
+
+        <div class="gallery-modal" id="galleryModal">
+            <div class="gallery-header">
+                <h2>Galería</h2>
+                <button class="close-gallery" id="closeGallery">✕</button>
+            </div>
+            <div class="gallery-grid" id="galleryGrid"></div>
+        </div>
+
+        <div class="flash-effect" id="flashEffect"></div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
