@@ -394,7 +394,7 @@ class AnalogCamera {
         loop();
     }
 
-    // Film emulation filters - INTENSIFIED
+    // Film emulation filters - SUTILIZADOS
     applyKodakPortra(imageData) {
         const data = imageData.data;
         for (let i = 0; i < data.length; i += 4) {
@@ -402,23 +402,23 @@ class AnalogCamera {
             let g = data[i + 1];
             let b = data[i + 2];
 
-            // Strong warm peachy tones
-            r = Math.min(255, r * 1.18);
-            g = Math.min(255, g * 1.05);
-            b = b * 0.85;
+            // Warmth muy sutil
+            r = Math.min(255, r * 1.05);
+            g = Math.min(255, g * 1.02);
+            b = b * 0.96;
 
-            // Heavy lifted shadows (faded look)
+            // Fade muy leve en sombras
             const luma = 0.299 * r + 0.587 * g + 0.114 * b;
-            if (luma < 128) {
-                r = r + (255 - r) * 0.18;
-                g = g + (255 - g) * 0.15;
-                b = b + (255 - b) * 0.12;
+            if (luma < 100) {
+                r = r + (255 - r) * 0.06;
+                g = g + (255 - g) * 0.05;
+                b = b + (255 - b) * 0.04;
             }
 
-            // Soft contrast
-            r = ((r / 255 - 0.5) * 0.85 + 0.5) * 255;
-            g = ((g / 255 - 0.5) * 0.85 + 0.5) * 255;
-            b = ((b / 255 - 0.5) * 0.85 + 0.5) * 255;
+            // Contraste suave
+            r = ((r / 255 - 0.5) * 0.95 + 0.5) * 255;
+            g = ((g / 255 - 0.5) * 0.95 + 0.5) * 255;
+            b = ((b / 255 - 0.5) * 0.95 + 0.5) * 255;
 
             data[i] = Math.max(0, Math.min(255, r));
             data[i + 1] = Math.max(0, Math.min(255, g));
@@ -817,7 +817,7 @@ class AnalogCamera {
         const data = imageData.data;
 
         for (let i = 0; i < data.length; i += 4) {
-            const noise = (Math.random() - 0.5) * 12;
+            const noise = (Math.random() - 0.5) * 6; // Reducido de 12 a 6
             data[i] = Math.max(0, Math.min(255, data[i] + noise));
             data[i + 1] = Math.max(0, Math.min(255, data[i + 1] + noise));
             data[i + 2] = Math.max(0, Math.min(255, data[i + 2] + noise));
