@@ -30,6 +30,7 @@ body {
     max-width: 100%;
     margin: 0 auto;
     position: relative;
+    background: #000;
 }
 
 .app-header {
@@ -124,8 +125,10 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    aspect-ratio: 3 / 2;
-    max-height: calc(100vh - 320px);
+    width: 100%;
+    /* Override aspect-ratio to fill screen */
+    aspect-ratio: auto !important;
+    max-height: none;
 }
 
 /* Dynamic aspect ratios */
@@ -145,11 +148,17 @@ body {
     aspect-ratio: 16 / 9;
 }
 
-#videoElement {
-    width: 100%;
-    height: 100%;
+#videoElement,
+#previewCanvas {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    min-width: 100%;
+    min-height: 100%;
+    width: auto;
+    height: auto;
     object-fit: cover;
-    transform: scaleX(-1);
 }
 
 #previewCanvas {

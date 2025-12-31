@@ -134,9 +134,38 @@ class AnalogCamera {
             clearCacheBtn.addEventListener('click', () => this.clearCache());
         }
 
-        // Close gallery on escape
+        // Settings Modal
+        const settingsBtn = document.getElementById('settingsBtn');
+        const settingsModal = document.getElementById('settingsModal');
+        const closeSettings = document.getElementById('closeSettings');
+
+        if (settingsBtn) {
+            settingsBtn.addEventListener('click', () => {
+                settingsModal.classList.add('active');
+            });
+        }
+
+        if (closeSettings) {
+            closeSettings.addEventListener('click', () => {
+                settingsModal.classList.remove('active');
+            });
+        }
+
+        // Cerrar al clickear afuera del contenido
+        if (settingsModal) {
+            settingsModal.addEventListener('click', (e) => {
+                if (e.target === settingsModal) {
+                    settingsModal.classList.remove('active');
+                }
+            });
+        }
+
+        // Close gallery/settings on escape
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') this.closeGallery();
+            if (e.key === 'Escape') {
+                this.closeGallery();
+                if (settingsModal) settingsModal.classList.remove('active');
+            }
         });
     }
 

@@ -52,6 +52,8 @@ class VideoRecorder {
         this.recordCanvas.height = cropHeight;
         const recordCtx = this.recordCanvas.getContext('2d');
 
+        this.isRecording = true; // Flag activado antes del loop
+
         // Loop para copiar canvas filtrado con crop
         const copyLoop = () => {
             if (!this.isRecording) return;
@@ -85,7 +87,6 @@ class VideoRecorder {
                 resolve(this.getVideoBlob());
             };
             this.mediaRecorder.start(100);
-            this.isRecording = true;
         });
     }
 
