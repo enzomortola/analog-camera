@@ -17,7 +17,12 @@ class AnalogCamera {
 
         this.currentFilter = 'kodak';
         this.currentRatio = localStorage.getItem('aspectRatio') || '3/2';
-        this.facingMode = 'environment'; // Start with back camera
+        this.currentMode = 'photo'; // 'photo' or 'video'
+        this.isRecording = false;
+        this.mediaRecorder = null;
+        this.recordedChunks = [];
+        this.orientation = 'landscape';
+        this.facingMode = 'environment';
         this.stream = null;
         this.photos = JSON.parse(localStorage.getItem('analogPhotos') || '[]');
         this.frameCount = parseInt(localStorage.getItem('filmCounter') || '36');
@@ -48,6 +53,7 @@ class AnalogCamera {
     async init() {
         this.updateDateStamp();
         this.updateFilmCounter();
+        this.detectOrientation();
         this.setAspectRatio(this.currentRatio);
         this.bindEvents();
         await this.startCamera();
@@ -55,10 +61,35 @@ class AnalogCamera {
     }
 
     bindEvents() {
-        this.captureBtn.addEventListener('click', () => this.capturePhoto());
+        this.captureBtn.addEventListener('click', () => {
+            if (this.currentMode === 'photo') {
+                this.capturePhoto();
+            } else {
+                this.toggleRecording();
+            }
+        });
+
+        const modeToggle = document.getElementById('modeToggle');
+        if (modeToggle) {
+            modeToggle.addEventListener('click', () => this.toggleMode());
+        }
+
         this.switchBtn.addEventListener('click', () => this.switchCamera());
         this.galleryBtn.addEventListener('click', () => this.openGallery());
         this.closeGalleryBtn.addEventListener('click', () => this.closeGallery());
+
+        // Orientation change
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => {
+                this.detectOrientation();
+                this.updateCropFrame();
+            }, 100);
+        });
+
+        window.addEventListener('resize', () => {
+            this.detectOrientation();
+            this.updateCropFrame();
+        });
 
         // Filter buttons with mobile tooltip
         document.querySelectorAll('.filter-btn').forEach(btn => {
@@ -156,6 +187,66 @@ class AnalogCamera {
                 btn.classList.remove('active');
             }
         });
+    }
+
+    detectOrientation() {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        this.orientation = height > width ? 'portrait' : 'landscape';
+        this.updateCropFrame();
+    }
+
+    updateCropFrame() {
+        const container = document.getElementById('cameraContainer');
+        const cropFrame = document.getElementById('cropFrame');
+        if (!container || !cropFrame) return;
+
+        const containerRect = container.getBoundingClientRect();
+        const ratios = {
+            '3/2': 3 / 2,
+            '4/3': 4 / 3,
+            '1/1': 1,
+            '16/9': 16 / 9
+        };
+
+        let targetRatio = ratios[this.currentRatio];
+
+        // Invertir ratio si está en portrait
+        if (this.orientation === 'portrait' && this.currentRatio !== '1/1') {
+            targetRatio = 1 / targetRatio;
+        }
+
+        const containerRatio = containerRect.width / containerRect.height;
+
+        let frameWidth, frameHeight;
+
+        if (containerRatio > targetRatio) {
+            // Container es más ancho, limitar por altura
+            frameHeight = containerRect.height;
+            frameWidth = frameHeight * targetRatio;
+        } else {
+            // Container es más alto, limitar por ancho
+            frameWidth = containerRect.width;
+            frameHeight = frameWidth / targetRatio;
+        }
+
+        cropFrame.style.width = `${frameWidth}px`;
+        cropFrame.style.height = `${frameHeight}px`;
+    }
+
+    toggleMode() {
+        const modeToggle = document.getElementById('modeToggle');
+        const modeIcon = modeToggle.querySelector('.mode-icon');
+
+        if (this.currentMode === 'photo') {
+            this.currentMode = 'video';
+            modeToggle.classList.add('video-mode');
+            modeIcon.textContent = '🎥';
+        } else {
+            this.currentMode = 'photo';
+            modeToggle.classList.remove('video-mode');
+            modeIcon.textContent = '📷';
+        }
     }
 
     async startCamera() {
@@ -499,7 +590,7 @@ class AnalogCamera {
         this.lightLeak.classList.add('active');
         setTimeout(() => this.lightLeak.classList.remove('active'), 800);
 
-        // Calculate final dimensions based on aspect ratio
+        // Calculate final dimensions based on aspect ratio and orientation
         const ratios = {
             '3/2': 3 / 2,
             '4/3': 4 / 3,
@@ -507,7 +598,13 @@ class AnalogCamera {
             '16/9': 16 / 9
         };
 
-        const targetRatio = ratios[this.currentRatio];
+        let targetRatio = ratios[this.currentRatio];
+
+        // Invertir ratio si está en portrait
+        if (this.orientation === 'portrait' && this.currentRatio !== '1/1') {
+            targetRatio = 1 / targetRatio;
+        }
+
         const sourceWidth = this.canvas.width;
         const sourceHeight = this.canvas.height;
         const sourceRatio = sourceWidth / sourceHeight;
@@ -576,6 +673,90 @@ class AnalogCamera {
         // Haptic feedback if available
         if (navigator.vibrate) {
             navigator.vibrate(50);
+        }
+    }
+
+    async toggleRecording() {
+        if (!this.isRecording) {
+            // Iniciar grabación
+            this.recordedChunks = [];
+
+            try {
+                const options = { mimeType: 'video/webm;codecs=vp9' };
+                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                    options.mimeType = 'video/webm';
+                }
+
+                this.mediaRecorder = new MediaRecorder(this.stream, options);
+
+                this.mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        this.recordedChunks.push(event.data);
+                    }
+                };
+
+                this.mediaRecorder.onstop = () => {
+                    this.saveVideo();
+                };
+
+                this.mediaRecorder.start(100);
+                this.isRecording = true;
+
+                // Cambiar apariencia del botón
+                const shutterInner = document.querySelector('.shutter-inner');
+                shutterInner.style.background = 'var(--accent-red)';
+                shutterInner.style.borderRadius = '8px';
+
+                // Light leak continuo mientras graba
+                this.lightLeak.classList.add('active');
+
+            } catch (err) {
+                console.error('Error al iniciar grabación:', err);
+                alert('No se pudo iniciar la grabación de video');
+            }
+        } else {
+            // Det ener grabación
+            if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+                this.mediaRecorder.stop();
+            }
+            this.isRecording = false;
+
+            // Restaurar apariencia del botón
+            const shutterInner = document.querySelector('.shutter-inner');
+            shutterInner.style.background = 'var(--text-light)';
+            shutterInner.style.borderRadius = '50%';
+
+            this.lightLeak.classList.remove('active');
+
+            // Actualizar contador
+            this.frameCount--;
+            if (this.frameCount <= 0) this.frameCount = 36;
+            localStorage.setItem('filmCounter', this.frameCount.toString());
+            this.updateFilmCounter();
+        }
+    }
+
+    saveVideo() {
+        const blob = new Blob(this.recordedChunks, { type: 'video/webm' });
+        const videoURL = URL.createObjectURL(blob);
+
+        this.photos.unshift({
+            id: Date.now(),
+            data: videoURL,
+            isVideo: true,
+            filter: this.currentFilter,
+            ratio: this.currentRatio,
+            date: new Date().toISOString()
+        });
+
+        if (this.photos.length > 50) {
+            this.photos = this.photos.slice(0, 50);
+        }
+
+        localStorage.setItem('analogPhotos', JSON.stringify(this.photos));
+
+        if (navigator.vibrate) {
+            navigator.vibrate([50, 50, 50]);
         }
     }
 
@@ -648,15 +829,20 @@ class AnalogCamera {
         }
 
         this.galleryGrid.innerHTML = this.photos.map((photo, index) => `
-            <div class="gallery-item" data-index="${index}">
-                <img src="${photo.data}" alt="Photo ${index + 1}" loading="lazy">
+            <div class="gallery-item ${photo.isVideo ? 'video-item' : ''}" data-index="${index}">
+                ${photo.isVideo ?
+                `<video src="${photo.data}" muted></video>
+                     <div class="video-overlay">🎥</div>` :
+                `<img src="${photo.data}" alt="Photo ${index + 1}" loading="lazy">`
+            }
                 <button class="delete-btn" data-id="${photo.id}">✕</button>
             </div>
         `).join('');
 
         // Bind events
-        this.galleryGrid.querySelectorAll('.gallery-item img').forEach(img => {
-            img.addEventListener('click', (e) => {
+        this.galleryGrid.querySelectorAll('.gallery-item').forEach(item => {
+            const mediaEl = item.querySelector('img, video');
+            mediaEl.addEventListener('click', (e) => {
                 const index = e.target.closest('.gallery-item').dataset.index;
                 this.viewPhoto(parseInt(index));
             });
@@ -678,11 +864,16 @@ class AnalogCamera {
         // Create viewer modal
         const viewer = document.createElement('div');
         viewer.className = 'image-viewer active';
+
+        const mediaElement = photo.isVideo ?
+            `<video src="${photo.data}" controls autoplay class="viewer-image"></video>` :
+            `<img src="${photo.data}" alt="Full photo" class="viewer-image">`;
+
         viewer.innerHTML = `
             <div class="photo-counter">${currentIndex + 1} / ${this.photos.length}</div>
             <button class="nav-btn prev-btn">‹</button>
             <button class="nav-btn next-btn">›</button>
-            <img src="${photo.data}" alt="Full photo" class="viewer-image">
+            ${mediaElement}
             <div class="image-viewer-controls">
                 <button class="viewer-btn download">💾 Guardar</button>
                 <button class="viewer-btn delete-photo">🗑️ Eliminar</button>
@@ -692,7 +883,7 @@ class AnalogCamera {
 
         document.body.appendChild(viewer);
 
-        const img = viewer.querySelector('.viewer-image');
+        const mediaEl = viewer.querySelector('.viewer-image');
         const counter = viewer.querySelector('.photo-counter');
         const prevBtn = viewer.querySelector('.prev-btn');
         const nextBtn = viewer.querySelector('.next-btn');
@@ -701,11 +892,22 @@ class AnalogCamera {
         const updateImage = (newIndex) => {
             if (newIndex < 0 || newIndex >= this.photos.length) return;
             currentIndex = newIndex;
-            img.style.opacity = '0';
+            mediaEl.style.opacity = '0';
             setTimeout(() => {
-                img.src = this.photos[currentIndex].data;
+                const newPhoto = this.photos[currentIndex];
+                const newMediaElement = newPhoto.isVideo ?
+                    `<video src="${newPhoto.data}" controls autoplay class="viewer-image"></video>` :
+                    `<img src="${newPhoto.data}" alt="Full photo" class="viewer-image">`;
+
+                // Replace media element
+                const oldMediaEl = viewer.querySelector('.viewer-image');
+                oldMediaEl.outerHTML = newMediaElement;
+                const freshMediaEl = viewer.querySelector('.viewer-image');
+
                 counter.textContent = `${currentIndex + 1} / ${this.photos.length}`;
-                img.style.opacity = '1';
+                setTimeout(() => {
+                    freshMediaEl.style.opacity = '1';
+                }, 50);
             }, 150);
         };
 
@@ -724,11 +926,11 @@ class AnalogCamera {
         let touchStartX = 0;
         let touchEndX = 0;
 
-        img.addEventListener('touchstart', (e) => {
+        viewer.addEventListener('touchstart', (e) => {
             touchStartX = e.changedTouches[0].screenX;
         });
 
-        img.addEventListener('touchend', (e) => {
+        viewer.addEventListener('touchend', (e) => {
             touchEndX = e.changedTouches[0].screenX;
             handleSwipe();
         });
