@@ -17,55 +17,95 @@
 
 <body>
     <div class="app-container">
-        <header class="app-header">
-            <h1>📷 Analog Cam</h1>
-            <div class="film-counter" id="filmCounter">36</div>
-        </header>
-
-        <div class="ratio-selector">
-            <button class="ratio-btn active" data-ratio="3/2" title="35mm Film">3:2</button>
-            <button class="ratio-btn" data-ratio="4/3" title="Classic">4:3</button>
-            <button class="ratio-btn" data-ratio="1/1" title="Instagram">1:1</button>
-            <button class="ratio-btn" data-ratio="16/9" title="Widescreen">16:9</button>
-        </div>
-
+        <!-- Camera full screen -->
         <div class="camera-container" id="cameraContainer">
             <video id="videoElement" autoplay playsinline></video>
             <canvas id="previewCanvas"></canvas>
-            <div class="crop-frame" id="cropFrame"></div>
+
+            <!-- Black overlays para delimitar área de captura -->
+            <div class="crop-overlay crop-overlay-top"></div>
+            <div class="crop-overlay crop-overlay-bottom"></div>
+            <div class="crop-overlay crop-overlay-left"></div>
+            <div class="crop-overlay crop-overlay-right"></div>
+
             <div class="film-grain"></div>
             <div class="vignette"></div>
             <div class="light-leak" id="lightLeak"></div>
-            <div class="date-stamp" id="dateStamp"></div>
+
+            <!-- Top bar con info -->
+            <div class="top-bar">
+                <div class="film-counter" id="filmCounter">36</div>
+                <div class="date-stamp" id="dateStamp"></div>
+            </div>
         </div>
 
-        <div class="filter-selector">
-            <button class="filter-btn active" data-filter="kodak" title="Tonos peachy cálidos, faded blacks">
-                Kodak Portra
+        <!-- Bottom controls (siempre visibles) -->
+        <div class="bottom-controls">
+            <button class="icon-btn" id="settingsBtn">
+                <span>⚙️</span>
             </button>
-            <button class="filter-btn" data-filter="fuji" title="Cyan/teal en cielos, tonos fríos">
-                Fuji 400H
-            </button>
-            <button class="filter-btn" data-filter="cinestill" title="Azul en sombras, halación roja">
-                CineStill 800T
-            </button>
-            <button class="filter-btn" data-filter="ilford" title="B&W alto contraste, sepia cálido">
-                Ilford HP5
-            </button>
-            <button class="filter-btn" data-filter="agfa" title="Colores ultra saturados, naranja intenso">
-                Agfa Vista
-            </button>
-            <button class="filter-btn" data-filter="lomography" title="Cross-process magenta psicodélico">
-                Lomo Purple
-            </button>
-            <button class="filter-btn" data-filter="custom" title="Crea tu propio estilo" id="customFilterBtn">
-                ⚙️ Personalizada
+
+            <div class="capture-group">
+                <button class="mode-toggle" id="modeToggle">
+                    <span class="mode-icon">📷</span>
+                </button>
+                <button class="shutter-btn" id="captureBtn">
+                    <div class="shutter-inner"></div>
+                </button>
+            </div>
+
+            <button class="icon-btn" id="galleryBtn">
+                <span>🖼️</span>
             </button>
         </div>
 
+        <!-- Settings panel (desplegable) -->
+        <div class="settings-panel" id="settingsPanel">
+            <div class="settings-header">
+                <h3>Ajustes</h3>
+                <button class="close-settings" id="closeSettings">✕</button>
+            </div>
+
+            <div class="settings-content">
+                <!-- Camera controls -->
+                <div class="setting-group">
+                    <label>Cámara</label>
+                    <button class="setting-btn" id="switchCamera">
+                        <span>🔄</span> Cambiar cámara
+                    </button>
+                </div>
+
+                <!-- Aspect ratio -->
+                <div class="setting-group">
+                    <label>Proporción</label>
+                    <div class="ratio-buttons">
+                        <button class="ratio-btn active" data-ratio="3/2">3:2</button>
+                        <button class="ratio-btn" data-ratio="4/3">4:3</button>
+                        <button class="ratio-btn" data-ratio="1/1">1:1</button>
+                        <button class="ratio-btn" data-ratio="16/9">16:9</button>
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <div class="setting-group">
+                    <label>Filtros</label>
+                    <div class="filter-grid">
+                        <button class="filter-btn active" data-filter="kodak">Kodak</button>
+                        <button class="filter-btn" data-filter="fuji">Fuji</button>
+                        <button class="filter-btn" data-filter="cinestill">CineStill</button>
+                        <button class="filter-btn" data-filter="ilford">Ilford</button>
+                        <button class="filter-btn" data-filter="agfa">Agfa</button>
+                        <button class="filter-btn" data-filter="lomography">Lomo</button>
+                        <button class="filter-btn" data-filter="custom">Custom</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Custom filter panel -->
         <div class="custom-controls" id="customControls">
             <div class="custom-header">
-                <h3>Ecualización Personalizada</h3>
+                <h3>Filtro Personalizado</h3>
                 <button class="close-custom" id="closeCustom">✕</button>
             </div>
             <div class="sliders-container">
@@ -90,30 +130,14 @@
                     <input type="range" id="tint" min="-50" max="50" value="0" step="1">
                 </div>
                 <div class="slider-group">
-                    <label>Fade (Sombras) <span id="fadeValue">0</span></label>
+                    <label>Fade <span id="fadeValue">0</span></label>
                     <input type="range" id="fade" min="0" max="50" value="0" step="1">
                 </div>
                 <button class="reset-btn" id="resetCustom">Resetear</button>
             </div>
         </div>
 
-        <div class="controls">
-            <button class="control-btn" id="switchCamera">
-                <span>🔄</span>
-            </button>
-            <div class="capture-group">
-                <button class="mode-toggle" id="modeToggle">
-                    <span class="mode-icon">📷</span>
-                </button>
-                <button class="shutter-btn" id="captureBtn">
-                    <div class="shutter-inner"></div>
-                </button>
-            </div>
-            <button class="control-btn" id="galleryBtn">
-                <span>🖼️</span>
-            </button>
-        </div>
-
+        <!-- Gallery -->
         <div class="gallery-modal" id="galleryModal">
             <div class="gallery-header">
                 <h2>Galería</h2>
@@ -130,7 +154,6 @@
 
     <script src="app.js"></script>
     <script>
-        // Register Service Worker for PWA
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js')
                 .then(() => console.log('✅ PWA ready'))
