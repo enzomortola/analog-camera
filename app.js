@@ -120,6 +120,7 @@ class AnalogCamera {
                 e.target.classList.add('active');
                 const ratio = e.target.dataset.ratio;
                 this.setAspectRatio(ratio);
+                this.updateCropFrame(); // Actualizar frame al cambiar ratio
             });
         });
 
@@ -626,17 +627,41 @@ class AnalogCamera {
         }
 
         // Create capture canvas with correct aspect ratio
+        // Si está en landscape, rotar para guardar en portrait
+        const shouldRotate = this.orientation === 'landscape' && this.currentRatio !== '1/1';
+
+        let finalWidth, finalHeight;
+        if (shouldRotate) {
+            // Swap dimensions para portrait
+            finalWidth = cropHeight;
+            finalHeight = cropWidth;
+        } else {
+            finalWidth = cropWidth;
+            finalHeight = cropHeight;
+        }
+
         const captureCanvas = document.createElement('canvas');
-        captureCanvas.width = cropWidth;
-        captureCanvas.height = cropHeight;
+        captureCanvas.width = finalWidth;
+        captureCanvas.height = finalHeight;
         const captureCtx = captureCanvas.getContext('2d');
 
-        // Draw cropped filtered image
-        captureCtx.drawImage(
-            this.canvas,
-            cropX, cropY, cropWidth, cropHeight,
-            0, 0, cropWidth, cropHeight
-        );
+        if (shouldRotate) {
+            // Rotar 90° clockwise para landscape → portrait
+            captureCtx.translate(finalWidth, 0);
+            captureCtx.rotate(Math.PI / 2);
+            captureCtx.drawImage(
+                this.canvas,
+                cropX, cropY, cropWidth, cropHeight,
+                0, 0, cropWidth, cropHeight
+            );
+        } else {
+            // Draw cropped filtered image normal
+            captureCtx.drawImage(
+                this.canvas,
+                cropX, cropY, cropWidth, cropHeight,
+                0, 0, cropWidth, cropHeight
+            );
+        }
 
         // Add film grain overlay
         this.addFilmGrain(captureCtx, captureCanvas.width, captureCanvas.height);
