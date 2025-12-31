@@ -377,28 +377,31 @@ class AnalogCamera {
                 this.stream.getTracks().forEach(track => track.stop());
             }
 
-            // 🚀 Ajustar resolución según dispositivo
-            let targetWidth, targetHeight;
+            // 🚀 Configuración adaptativa: no forzar resolución para evitar zoom
+            let constraints;
 
             if (this.deviceTier === 'high') {
-                targetWidth = 1920;
-                targetHeight = 1080;
-            } else if (this.deviceTier === 'medium') {
-                targetWidth = 1280; // 📱 A24: resolución reducida
-                targetHeight = 720;
+                // High-end: pedir máxima resolución
+                constraints = {
+                    video: {
+                        facingMode: this.facingMode,
+                        width: { ideal: 1920, max: 3840 },
+                        height: { ideal: 1080, max: 2160 }
+                    },
+                    audio: false
+                };
             } else {
-                targetWidth = 960;
-                targetHeight = 540;
+                // Medium/Low: usar resolución nativa sin forzar (evita zoom)
+                constraints = {
+                    video: {
+                        facingMode: this.facingMode,
+                        // Solo limitamos el máximo, dejamos que use su resolución nativa
+                        width: { max: 1920 },
+                        height: { max: 1080 }
+                    },
+                    audio: false
+                };
             }
-
-            const constraints = {
-                video: {
-                    facingMode: this.facingMode,
-                    width: { ideal: targetWidth },
-                    height: { ideal: targetHeight }
-                },
-                audio: false
-            };
 
             this.stream = await navigator.mediaDevices.getUserMedia(constraints);
             this.video.srcObject = this.stream;
