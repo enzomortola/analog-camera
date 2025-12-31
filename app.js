@@ -707,12 +707,15 @@ class AnalogCamera {
             this.recordedChunks = [];
 
             try {
+                // Capturar del canvas filtrado, no del stream original
+                const canvasStream = this.canvas.captureStream(30); // 30 FPS
+
                 const options = { mimeType: 'video/webm;codecs=vp9' };
                 if (!MediaRecorder.isTypeSupported(options.mimeType)) {
                     options.mimeType = 'video/webm';
                 }
 
-                this.mediaRecorder = new MediaRecorder(this.stream, options);
+                this.mediaRecorder = new MediaRecorder(canvasStream, options);
 
                 this.mediaRecorder.ondataavailable = (event) => {
                     if (event.data.size > 0) {
