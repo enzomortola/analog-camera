@@ -34,7 +34,9 @@ class AnalogCamera {
             saturation: 0,
             brightness: 0,
             tint: 0,
-            fade: 0
+            fade: 0,
+            grain: 6,
+            vignette: 0.25
         }));
 
         this.filters = {
@@ -181,13 +183,46 @@ class AnalogCamera {
             });
         });
 
+        // Grain slider
+        const grainSlider = document.getElementById('grainIntensity');
+        const grainValue = document.getElementById('grainValue');
+        grainSlider.value = this.customSettings.grain;
+        grainValue.textContent = this.customSettings.grain;
+        grainSlider.addEventListener('input', (e) => {
+            this.customSettings.grain = parseInt(e.target.value);
+            grainValue.textContent = e.target.value;
+            localStorage.setItem('customFilterSettings', JSON.stringify(this.customSettings));
+        });
+
+        // Vignette slider (0-100 → 0-1)
+        const vignetteSlider = document.getElementById('vignetteIntensity');
+        const vignetteValue = document.getElementById('vignetteValue');
+        vignetteSlider.value = this.customSettings.vignette * 100;
+        vignetteValue.textContent = this.customSettings.vignette.toFixed(2);
+        vignetteSlider.addEventListener('input', (e) => {
+            this.customSettings.vignette = parseInt(e.target.value) / 100;
+            vignetteValue.textContent = (parseInt(e.target.value) / 100).toFixed(2);
+            localStorage.setItem('customFilterSettings', JSON.stringify(this.customSettings));
+        });
+
         resetBtn.addEventListener('click', () => {
             ['warmth', 'contrast', 'saturation', 'brightness', 'tint', 'fade'].forEach(param => {
                 this.customSettings[param] = 0;
                 document.getElementById(param).value = 0;
                 document.getElementById(`${param}Value`).textContent = '0';
             });
-            localStorage.setItem('customFilterSettings', JSON.stringify(this.customSettings));
+
+            // Reset grain
+            this.customSettings.grain = 6;
+            grainSlider.value = 6;
+            grainValue.textContent = '6';
+
+            // Reset vignette
+            this.customSettings.vignette = 0.25;
+            vignetteSlider.value = 25;
+            vignetteValue.textContent = '0.25';
+
+            localStorage.setItem('customSettings', JSON.stringify(this.customSettings));
         });
     }
 
@@ -821,8 +856,11 @@ class AnalogCamera {
         const imageData = ctx.getImageData(0, 0, width, height);
         const data = imageData.data;
 
+        // Usa grain del custom settings
+        const grainIntensity = this.currentFilter === 'custom' ? this.customSettings.grain : 6;
+
         for (let i = 0; i < data.length; i += 4) {
-            const noise = (Math.random() - 0.5) * 6; // Reducido de 12 a 6
+            const noise = (Math.random() - 0.5) * grainIntensity;
             data[i] = Math.max(0, Math.min(255, data[i] + noise));
             data[i + 1] = Math.max(0, Math.min(255, data[i + 1] + noise));
             data[i + 2] = Math.max(0, Math.min(255, data[i + 2] + noise));
@@ -832,12 +870,15 @@ class AnalogCamera {
     }
 
     addVignette(ctx, width, height) {
+        // Usa vignette del custom settings
+        const vignetteIntensity = this.currentFilter === 'custom' ? this.customSettings.vignette : 0.25;
+
         const gradient = ctx.createRadialGradient(
             width / 2, height / 2, height * 0.3,
             width / 2, height / 2, height * 0.8
         );
         gradient.addColorStop(0, 'rgba(0,0,0,0)');
-        gradient.addColorStop(1, 'rgba(0,0,0,0.5)');
+        gradient.addColorStop(1, `rgba(0,0,0,${vignetteIntensity * 2})`); // Multiplica por 2 para rango 0-2
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, width, height);
     }
