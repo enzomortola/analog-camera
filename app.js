@@ -22,7 +22,6 @@ class AnalogCamera {
         this.mediaRecorder = null;
         this.recordedChunks = [];
         this.orientation = 'landscape';
-        this.videoRecorder = null; // VideoRecorder del nuevo módulo
         this.facingMode = 'environment';
         this.stream = null;
         this.photos = JSON.parse(localStorage.getItem('analogPhotos') || '[]');
@@ -134,38 +133,9 @@ class AnalogCamera {
             clearCacheBtn.addEventListener('click', () => this.clearCache());
         }
 
-        // Settings Modal
-        const settingsBtn = document.getElementById('settingsBtn');
-        const settingsModal = document.getElementById('settingsModal');
-        const closeSettings = document.getElementById('closeSettings');
-
-        if (settingsBtn) {
-            settingsBtn.addEventListener('click', () => {
-                settingsModal.classList.add('active');
-            });
-        }
-
-        if (closeSettings) {
-            closeSettings.addEventListener('click', () => {
-                settingsModal.classList.remove('active');
-            });
-        }
-
-        // Cerrar al clickear afuera del contenido
-        if (settingsModal) {
-            settingsModal.addEventListener('click', (e) => {
-                if (e.target === settingsModal) {
-                    settingsModal.classList.remove('active');
-                }
-            });
-        }
-
-        // Close gallery/settings on escape
+        // Close gallery on escape
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                this.closeGallery();
-                if (settingsModal) settingsModal.classList.remove('active');
-            }
+            if (e.key === 'Escape') this.closeGallery();
         });
     }
 
@@ -228,12 +198,41 @@ class AnalogCamera {
     }
 
     updateCropFrame() {
-        // Usar función global del módulo crop-frame.js
         const container = document.getElementById('cameraContainer');
         const cropFrame = document.getElementById('cropFrame');
-        if (typeof updateCropFrame === 'function') {
-            updateCropFrame(this.canvas, container, cropFrame, this.currentRatio, this.orientation);
+        if (!container || !cropFrame) return;
+
+        const containerRect = container.getBoundingClientRect();
+        const ratios = {
+            '3/2': 3 / 2,
+            '4/3': 4 / 3,
+            '1/1': 1,
+            '16/9': 16 / 9
+        };
+
+        let targetRatio = ratios[this.currentRatio];
+
+        // Invertir ratio si está en portrait
+        if (this.orientation === 'portrait' && this.currentRatio !== '1/1') {
+            targetRatio = 1 / targetRatio;
         }
+
+        const containerRatio = containerRect.width / containerRect.height;
+
+        let frameWidth, frameHeight;
+
+        if (containerRatio > targetRatio) {
+            // Container es más ancho, limitar por altura
+            frameHeight = containerRect.height;
+            frameWidth = frameHeight * targetRatio;
+        } else {
+            // Container es más alto, limitar por ancho
+            frameWidth = containerRect.width;
+            frameHeight = frameWidth / targetRatio;
+        }
+
+        cropFrame.style.width = `${frameWidth}px`;
+        cropFrame.style.height = `${frameHeight}px`;
     }
 
     toggleMode() {
@@ -704,57 +703,53 @@ class AnalogCamera {
 
     async toggleRecording() {
         if (!this.isRecording) {
-            // Iniciar grabación con VideoRecorder
-            if (!this.videoRecorder) {
-                this.videoRecorder = new VideoRecorder(this.canvas, this.orientation, this.currentRatio);
+            // Iniciar grabación
+            this.recordedChunks = [];
+
+            try {
+                // Capturar del canvas filtrado, no del stream original
+                const canvasStream = this.canvas.captureStream(30); // 30 FPS
+
+                const options = { mimeType: 'video/webm;codecs=vp9' };
+                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                    options.mimeType = 'video/webm';
+                }
+
+                this.mediaRecorder = new MediaRecorder(canvasStream, options);
+
+                this.mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        this.recordedChunks.push(event.data);
+                    }
+                };
+
+                this.mediaRecorder.onstop = () => {
+                    this.saveVideo();
+                };
+
+                this.mediaRecorder.start(100);
+                this.isRecording = true;
+
+                // Cambiar apariencia del botón
+                const shutterInner = document.querySelector('.shutter-inner');
+                shutterInner.style.background = 'var(--accent-red)';
+                shutterInner.style.borderRadius = '8px';
+
+                // Light leak continuo mientras graba
+                this.lightLeak.classList.add('active');
+
+            } catch (err) {
+                console.error('Error al iniciar grabación:', err);
+                alert('No se pudo iniciar la grabación de video');
             }
-
-            // Actualizar orientación y ratio actuales
-            this.videoRecorder.orientation = this.orientation;
-            this.videoRecorder.currentRatio = this.currentRatio;
-
-            // Cambiar apariencia del botón
-            const shutterInner = document.querySelector('.shutter-inner');
-            shutterInner.style.background = 'var(--accent-red)';
-            shutterInner.style.borderRadius = '8px';
-
-            // Light leak continuo
-            this.lightLeak.classList.add('active');
-
-            // Iniciar grabación (retorna promise que se resuelve cuando se detiene)
-            this.videoRecorder.start().then((blob) => {
-                const videoURL = URL.createObjectURL(blob);
-
-                this.photos.unshift({
-                    id: Date.now(),
-                    data: videoURL,
-                    isVideo: true,
-                    filter: this.currentFilter,
-                    ratio: this.currentRatio,
-                    date: new Date().toISOString()
-                });
-
-                if (this.photos.length > 50) {
-                    this.photos = this.photos.slice(0, 50);
-                }
-
-                localStorage.setItem('analogPhotos', JSON.stringify(this.photos));
-
-                if (navigator.vibrate) {
-                    navigator.vibrate([50, 50, 50]);
-                }
-            });
-
-            this.isRecording = true;
-
         } else {
-            // Detener grabación
-            if (this.videoRecorder) {
-                this.videoRecorder.stop();
+            // Det ener grabación
+            if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+                this.mediaRecorder.stop();
             }
             this.isRecording = false;
 
-            // Restaurar botón
+            // Restaurar apariencia del botón
             const shutterInner = document.querySelector('.shutter-inner');
             shutterInner.style.background = 'var(--text-light)';
             shutterInner.style.borderRadius = '50%';
@@ -766,6 +761,30 @@ class AnalogCamera {
             if (this.frameCount <= 0) this.frameCount = 36;
             localStorage.setItem('filmCounter', this.frameCount.toString());
             this.updateFilmCounter();
+        }
+    }
+
+    saveVideo() {
+        const blob = new Blob(this.recordedChunks, { type: 'video/webm' });
+        const videoURL = URL.createObjectURL(blob);
+
+        this.photos.unshift({
+            id: Date.now(),
+            data: videoURL,
+            isVideo: true,
+            filter: this.currentFilter,
+            ratio: this.currentRatio,
+            date: new Date().toISOString()
+        });
+
+        if (this.photos.length > 50) {
+            this.photos = this.photos.slice(0, 50);
+        }
+
+        localStorage.setItem('analogPhotos', JSON.stringify(this.photos));
+
+        if (navigator.vibrate) {
+            navigator.vibrate([50, 50, 50]);
         }
     }
 
@@ -785,7 +804,7 @@ class AnalogCamera {
 
     addVignette(ctx, width, height) {
         const gradient = ctx.createRadialGradient(
-            width / 2, height / 2, height * 0.4,
+            width / 2, height / 2, height * 0.3,
             width / 2, height / 2, height * 0.8
         );
         gradient.addColorStop(0, 'rgba(0,0,0,0)');
@@ -808,19 +827,18 @@ class AnalogCamera {
     }
 
     updateDateStamp() {
-        // Only for visual element
         const date = new Date();
         const dateStr = `'${date.getFullYear().toString().slice(-2)} ${(date.getMonth() + 1).toString().padStart(2, '0')} ${date.getDate().toString().padStart(2, '0')}`;
         this.dateStamp.textContent = dateStr;
     }
 
     updateFilmCounter() {
-        this.filmCounter.textContent = this.frameCount;
+        this.filmCounter.textContent = this.frameCount.toString().padStart(2, '0');
     }
 
     openGallery() {
-        this.galleryModal.classList.add('active');
         this.renderGallery();
+        this.galleryModal.classList.add('active');
     }
 
     closeGallery() {
@@ -921,37 +939,16 @@ class AnalogCamera {
             }, 150);
         };
 
-        // Navigation
-        prevBtn.addEventListener('click', () => updateImage(currentIndex - 1));
-        nextBtn.addEventListener('click', () => updateImage(currentIndex + 1));
-
-        // Close
-        viewer.querySelector('.close').addEventListener('click', () => viewer.remove());
-
-        // Download
-        viewer.querySelector('.download').addEventListener('click', () => {
-            const link = document.createElement('a');
-            const currentPhoto = this.photos[currentIndex];
-            link.download = `solcito-${currentPhoto.id}.${currentPhoto.isVideo ? 'webm' : 'jpg'}`;
-            link.href = currentPhoto.data;
-            link.click();
+        // Navigation buttons
+        prevBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (currentIndex > 0) updateImage(currentIndex - 1);
         });
 
-        // Delete from viewer
-        viewer.querySelector('.delete-photo').addEventListener('click', () => {
-            if (confirm('¿Eliminar esta foto?')) {
-                this.deletePhoto(this.photos[currentIndex].id);
-                viewer.remove();
-            }
+        nextBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (currentIndex < this.photos.length - 1) updateImage(currentIndex + 1);
         });
-
-        // Keys
-        const handleKey = (e) => {
-            if (e.key === 'ArrowLeft') updateImage(currentIndex - 1);
-            if (e.key === 'ArrowRight') updateImage(currentIndex + 1);
-            if (e.key === 'Escape') viewer.remove();
-        };
-        document.addEventListener('keydown', handleKey);
 
         // Swipe gestures
         let touchStartX = 0;
@@ -977,14 +974,49 @@ class AnalogCamera {
             }
         };
 
-        // Cleanup event listeners
-        const cleanup = () => {
-            document.removeEventListener('keydown', handleKey);
+        // Keyboard navigation
+        const handleKeyboard = (e) => {
+            if (e.key === 'ArrowLeft' && currentIndex > 0) {
+                updateImage(currentIndex - 1);
+            } else if (e.key === 'ArrowRight' && currentIndex < this.photos.length - 1) {
+                updateImage(currentIndex + 1);
+            } else if (e.key === 'Escape') {
+                viewer.remove();
+                document.removeEventListener('keydown', handleKeyboard);
+            }
         };
+        document.addEventListener('keydown', handleKeyboard);
 
-        // Listen for DOM node removal to cleanup
-        viewer.addEventListener('DOMNodeRemoved', (e) => {
-            if (e.target === viewer) cleanup();
+        // Close button
+        viewer.querySelector('.close').addEventListener('click', () => {
+            viewer.remove();
+            document.removeEventListener('keydown', handleKeyboard);
+        });
+
+        // Download button
+        viewer.querySelector('.download').addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = `analog_${Date.now()}.jpg`;
+            link.href = this.photos[currentIndex].data;
+            link.click();
+        });
+
+        // Delete button
+        viewer.querySelector('.delete-photo').addEventListener('click', () => {
+            if (confirm('¿Eliminar esta foto?')) {
+                const photoId = this.photos[currentIndex].id;
+                this.deletePhoto(photoId);
+                viewer.remove();
+                document.removeEventListener('keydown', handleKeyboard);
+            }
+        });
+
+        // Click outside to close
+        viewer.addEventListener('click', (e) => {
+            if (e.target === viewer) {
+                viewer.remove();
+                document.removeEventListener('keydown', handleKeyboard);
+            }
         });
     }
 
@@ -995,22 +1027,16 @@ class AnalogCamera {
     }
 
     clearCache() {
-        if (confirm('¿Estás seguro de que quieres borrar tomar todas las fotos y reiniciar la app?')) {
+        if (confirm('¿Eliminar TODAS las fotos guardadas? Esta acción no se puede deshacer.')) {
             this.photos = [];
             localStorage.setItem('analogPhotos', '[]');
             this.renderGallery();
-
-            // También limpiar configuración
-            localStorage.removeItem('filmCounter');
-            this.frameCount = 36;
-            this.updateFilmCounter();
-
-            alert('Galería y caché limpiados.');
+            alert('✅ Caché limpiado. Ya podés seguir sacando fotos!');
         }
     }
 }
 
-// Initialize camera when PWA is ready or page loads
+// Initialize app
 document.addEventListener('DOMContentLoaded', () => {
-    window.cameraApp = new AnalogCamera();
+    new AnalogCamera();
 });

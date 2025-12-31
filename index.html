@@ -22,57 +22,11 @@
             <div class="film-counter" id="filmCounter">36</div>
         </header>
 
-        <div class="settings-modal" id="settingsModal">
-            <div class="settings-content">
-                <div class="settings-header">
-                    <h2>Ajustes</h2>
-                    <button class="close-settings" id="closeSettings">✕</button>
-                </div>
-
-                <div class="settings-section">
-                    <h3>Formato</h3>
-                    <div class="ratio-selector">
-                        <button class="ratio-btn active" data-ratio="3/2" title="35mm Film">3:2</button>
-                        <button class="ratio-btn" data-ratio="4/3" title="Classic">4:3</button>
-                        <button class="ratio-btn" data-ratio="1/1" title="Instagram">1:1</button>
-                        <button class="ratio-btn" data-ratio="16/9" title="Widescreen">16:9</button>
-                    </div>
-                </div>
-
-                <div class="settings-section">
-                    <h3>Film Stock</h3>
-                    <div class="filter-list">
-                        <button class="filter-btn active" data-filter="kodak">
-                            <span class="filter-name">Kodak Portra</span>
-                            <span class="filter-desc">Peachy tones, faded blacks</span>
-                        </button>
-                        <button class="filter-btn" data-filter="fuji">
-                            <span class="filter-name">Fuji 400H</span>
-                            <span class="filter-desc">Cyan skies, cool tones</span>
-                        </button>
-                        <button class="filter-btn" data-filter="cinestill">
-                            <span class="filter-name">CineStill 800T</span>
-                            <span class="filter-desc">Tungsten, red halation</span>
-                        </button>
-                        <button class="filter-btn" data-filter="ilford">
-                            <span class="filter-name">Ilford HP5</span>
-                            <span class="filter-desc">B&W High Contrast</span>
-                        </button>
-                        <button class="filter-btn" data-filter="agfa">
-                            <span class="filter-name">Agfa Vista</span>
-                            <span class="filter-desc">Ultra satiated, warm</span>
-                        </button>
-                        <button class="filter-btn" data-filter="lomography">
-                            <span class="filter-name">Lomo Purple</span>
-                            <span class="filter-desc">Psychedelic magenta</span>
-                        </button>
-                        <button class="filter-btn" data-filter="custom" id="customFilterBtn">
-                            <span class="filter-name">⚙️ Custom</span>
-                            <span class="filter-desc">Create your own look</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
+        <div class="ratio-selector">
+            <button class="ratio-btn active" data-ratio="3/2" title="35mm Film">3:2</button>
+            <button class="ratio-btn" data-ratio="4/3" title="Classic">4:3</button>
+            <button class="ratio-btn" data-ratio="1/1" title="Instagram">1:1</button>
+            <button class="ratio-btn" data-ratio="16/9" title="Widescreen">16:9</button>
         </div>
 
         <div class="camera-container" id="cameraContainer">
@@ -85,7 +39,29 @@
             <div class="date-stamp" id="dateStamp"></div>
         </div>
 
-
+        <div class="filter-selector">
+            <button class="filter-btn active" data-filter="kodak" title="Tonos peachy cálidos, faded blacks">
+                Kodak Portra
+            </button>
+            <button class="filter-btn" data-filter="fuji" title="Cyan/teal en cielos, tonos fríos">
+                Fuji 400H
+            </button>
+            <button class="filter-btn" data-filter="cinestill" title="Azul en sombras, halación roja">
+                CineStill 800T
+            </button>
+            <button class="filter-btn" data-filter="ilford" title="B&W alto contraste, sepia cálido">
+                Ilford HP5
+            </button>
+            <button class="filter-btn" data-filter="agfa" title="Colores ultra saturados, naranja intenso">
+                Agfa Vista
+            </button>
+            <button class="filter-btn" data-filter="lomography" title="Cross-process magenta psicodélico">
+                Lomo Purple
+            </button>
+            <button class="filter-btn" data-filter="custom" title="Crea tu propio estilo" id="customFilterBtn">
+                ⚙️ Personalizada
+            </button>
+        </div>
 
         <div class="custom-controls" id="customControls">
             <div class="custom-header">
@@ -122,11 +98,8 @@
         </div>
 
         <div class="controls">
-            <button class="control-btn small-btn" id="settingsBtn">
-                <span>⚙️</span>
-            </button>
-            <button class="control-btn" id="galleryBtn">
-                <span>🖼️</span>
+            <button class="control-btn" id="switchCamera">
+                <span>🔄</span>
             </button>
             <div class="capture-group">
                 <button class="mode-toggle" id="modeToggle">
@@ -136,10 +109,9 @@
                     <div class="shutter-inner"></div>
                 </button>
             </div>
-            <button class="control-btn" id="switchCamera">
-                <span>🔄</span>
+            <button class="control-btn" id="galleryBtn">
+                <span>🖼️</span>
             </button>
-            <div class="spacer" style="width: 40px"></div>
         </div>
 
         <div class="gallery-modal" id="galleryModal">
@@ -156,8 +128,6 @@
         <div class="flash-effect" id="flashEffect"></div>
     </div>
 
-    <script src="crop-frame.js"></script>
-    <script src="video-recorder.js"></script>
     <script src="app.js"></script>
     <script>
         // Register Service Worker for PWA
