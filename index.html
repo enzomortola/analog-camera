@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -9,6 +10,7 @@
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 </head>
+
 <body>
     <div class="app-container">
         <header class="app-header">
@@ -26,12 +28,61 @@
         </div>
 
         <div class="filter-selector">
-            <button class="filter-btn active" data-filter="kodak">Kodak Portra</button>
-            <button class="filter-btn" data-filter="fuji">Fuji 400H</button>
-            <button class="filter-btn" data-filter="cinestill">CineStill 800T</button>
-            <button class="filter-btn" data-filter="ilford">Ilford HP5</button>
-            <button class="filter-btn" data-filter="agfa">Agfa Vista</button>
-            <button class="filter-btn" data-filter="lomography">Lomo Purple</button>
+            <button class="filter-btn active" data-filter="kodak" title="Tonos peachy cálidos, faded blacks">
+                Kodak Portra
+            </button>
+            <button class="filter-btn" data-filter="fuji" title="Cyan/teal en cielos, tonos fríos">
+                Fuji 400H
+            </button>
+            <button class="filter-btn" data-filter="cinestill" title="Azul en sombras, halación roja">
+                CineStill 800T
+            </button>
+            <button class="filter-btn" data-filter="ilford" title="B&W alto contraste, sepia cálido">
+                Ilford HP5
+            </button>
+            <button class="filter-btn" data-filter="agfa" title="Colores ultra saturados, naranja intenso">
+                Agfa Vista
+            </button>
+            <button class="filter-btn" data-filter="lomography" title="Cross-process magenta psicodélico">
+                Lomo Purple
+            </button>
+            <button class="filter-btn" data-filter="custom" title="Crea tu propio estilo" id="customFilterBtn">
+                ⚙️ Personalizada
+            </button>
+        </div>
+
+        <div class="custom-controls" id="customControls">
+            <div class="custom-header">
+                <h3>Ecualización Personalizada</h3>
+                <button class="close-custom" id="closeCustom">✕</button>
+            </div>
+            <div class="sliders-container">
+                <div class="slider-group">
+                    <label>Calidez <span id="warmthValue">0</span></label>
+                    <input type="range" id="warmth" min="-50" max="50" value="0" step="1">
+                </div>
+                <div class="slider-group">
+                    <label>Contraste <span id="contrastValue">0</span></label>
+                    <input type="range" id="contrast" min="-50" max="50" value="0" step="1">
+                </div>
+                <div class="slider-group">
+                    <label>Saturación <span id="saturationValue">0</span></label>
+                    <input type="range" id="saturation" min="-50" max="50" value="0" step="1">
+                </div>
+                <div class="slider-group">
+                    <label>Brillo <span id="brightnessValue">0</span></label>
+                    <input type="range" id="brightness" min="-50" max="50" value="0" step="1">
+                </div>
+                <div class="slider-group">
+                    <label>Verde/Magenta <span id="tintValue">0</span></label>
+                    <input type="range" id="tint" min="-50" max="50" value="0" step="1">
+                </div>
+                <div class="slider-group">
+                    <label>Fade (Sombras) <span id="fadeValue">0</span></label>
+                    <input type="range" id="fade" min="0" max="50" value="0" step="1">
+                </div>
+                <button class="reset-btn" id="resetCustom">Resetear</button>
+            </div>
         </div>
 
         <div class="controls">
@@ -49,7 +100,10 @@
         <div class="gallery-modal" id="galleryModal">
             <div class="gallery-header">
                 <h2>Galería</h2>
-                <button class="close-gallery" id="closeGallery">✕</button>
+                <div class="gallery-header-actions">
+                    <button class="clear-cache-btn" id="clearCacheBtn">🗑️ Limpiar Caché</button>
+                    <button class="close-gallery" id="closeGallery">✕</button>
+                </div>
             </div>
             <div class="gallery-grid" id="galleryGrid"></div>
         </div>
@@ -59,4 +113,5 @@
 
     <script src="app.js"></script>
 </body>
+
 </html>
