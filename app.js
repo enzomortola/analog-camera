@@ -994,10 +994,44 @@ class AnalogCamera {
         });
 
         // Download button
-        viewer.querySelector('.download').addEventListener('click', () => {
+        // Download button
+        viewer.querySelector('.download').addEventListener('click', async () => {
+            const currentPhoto = this.photos[currentIndex];
+            const isVideo = currentPhoto.isVideo;
+            const extension = isVideo ? 'webm' : 'jpg';
+            const mimeType = isVideo ? 'video/webm' : 'image/jpeg';
+            const fileName = `analog_${Date.now()}.${extension}`;
+
+            // Intentar usar File System Access API para "Guardar como..."
+            if (window.showSaveFilePicker) {
+                try {
+                    const handle = await window.showSaveFilePicker({
+                        suggestedName: fileName,
+                        types: [{
+                            description: isVideo ? 'Analog Video' : 'Analog Photo',
+                            accept: { [mimeType]: [`.${extension}`] },
+                        }],
+                    });
+
+                    const writable = await handle.createWritable();
+
+                    // Convertir dataURI a Blob
+                    const response = await fetch(currentPhoto.data);
+                    const blob = await response.blob();
+
+                    await writable.write(blob);
+                    await writable.close();
+                    return;
+                } catch (err) {
+                    if (err.name === 'AbortError') return; // Usuario canceló
+                    console.warn('Error con SaveFilePicker, usando fallback:', err);
+                }
+            }
+
+            // Fallback clásico
             const link = document.createElement('a');
-            link.download = `analog_${Date.now()}.jpg`;
-            link.href = this.photos[currentIndex].data;
+            link.download = fileName;
+            link.href = currentPhoto.data;
             link.click();
         });
 
