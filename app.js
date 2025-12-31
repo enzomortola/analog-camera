@@ -394,7 +394,7 @@ class AnalogCamera {
         loop();
     }
 
-    // Film emulation filters - SUTILIZADOS
+    // Film emulation filters - BALANCEADOS (fieles a películas reales)
     applyKodakPortra(imageData) {
         const data = imageData.data;
         for (let i = 0; i < data.length; i += 4) {
@@ -402,23 +402,23 @@ class AnalogCamera {
             let g = data[i + 1];
             let b = data[i + 2];
 
-            // Warmth muy sutil
-            r = Math.min(255, r * 1.05);
-            g = Math.min(255, g * 1.02);
-            b = b * 0.96;
+            // Tonos cálidos peachy característicos
+            r = Math.min(255, r * 1.12);
+            g = Math.min(255, g * 1.04);
+            b = b * 0.92;
 
-            // Fade muy leve en sombras
+            // Negros suaves (faded blacks)
             const luma = 0.299 * r + 0.587 * g + 0.114 * b;
-            if (luma < 100) {
-                r = r + (255 - r) * 0.06;
-                g = g + (255 - g) * 0.05;
-                b = b + (255 - b) * 0.04;
+            if (luma < 120) {
+                r = r + (255 - r) * 0.10;
+                g = g + (255 - g) * 0.09;
+                b = b + (255 - b) * 0.08;
             }
 
-            // Contraste suave
-            r = ((r / 255 - 0.5) * 0.95 + 0.5) * 255;
-            g = ((g / 255 - 0.5) * 0.95 + 0.5) * 255;
-            b = ((b / 255 - 0.5) * 0.95 + 0.5) * 255;
+            // Contraste suave pero presente
+            r = ((r / 255 - 0.5) * 0.90 + 0.5) * 255;
+            g = ((g / 255 - 0.5) * 0.90 + 0.5) * 255;
+            b = ((b / 255 - 0.5) * 0.90 + 0.5) * 255;
 
             data[i] = Math.max(0, Math.min(255, r));
             data[i + 1] = Math.max(0, Math.min(255, g));
@@ -435,27 +435,32 @@ class AnalogCamera {
 
             const luma = 0.299 * r + 0.587 * g + 0.114 * b;
 
-            // Strong cyan/teal in shadows and highlights
-            if (luma > 180) {
-                // Bright skies - cyan tint
-                b = Math.min(255, b * 1.25);
-                g = Math.min(255, g * 1.12);
-                r = r * 0.88;
-            } else if (luma < 80) {
-                // Shadows - cyan/green tint
-                g = Math.min(255, g * 1.15);
-                b = Math.min(255, b * 1.18);
+            // Tonos fríos cyan/teal moderados
+            if (luma > 170) {
+                // Cielos - tinte cyan
+                b = Math.min(255, b * 1.15);
+                g = Math.min(255, g * 1.08);
+                r = r * 0.93;
+            } else if (luma < 90) {
+                // Sombras - verde/cyan
+                g = Math.min(255, g * 1.10);
+                b = Math.min(255, b * 1.12);
             }
 
-            // Lifted blacks
-            r = r + (255 - r) * 0.08;
-            g = g + (255 - g) * 0.1;
-            b = b + (255 - b) * 0.12;
+            // Verdes en medios tonos
+            if (luma > 90 && luma < 170) {
+                g = Math.min(255, g * 1.06);
+            }
 
-            // Medium contrast
-            r = ((r / 255 - 0.5) * 1.05 + 0.5) * 255;
-            g = ((g / 255 - 0.5) * 1.05 + 0.5) * 255;
-            b = ((b / 255 - 0.5) * 1.05 + 0.5) * 255;
+            // Negros levantados
+            r = r + (255 - r) * 0.07;
+            g = g + (255 - g) * 0.08;
+            b = b + (255 - b) * 0.10;
+
+            // Contraste medio
+            r = ((r / 255 - 0.5) * 1.00 + 0.5) * 255;
+            g = ((g / 255 - 0.5) * 1.00 + 0.5) * 255;
+            b = ((b / 255 - 0.5) * 1.00 + 0.5) * 255;
 
             data[i] = Math.max(0, Math.min(255, r));
             data[i + 1] = Math.max(0, Math.min(255, g));
@@ -472,27 +477,27 @@ class AnalogCamera {
 
             const luma = 0.299 * r + 0.587 * g + 0.114 * b;
 
-            // Extreme tungsten color shift
+            // Look cinematográfico con shift tungsten moderado
             if (luma < 100) {
-                // Deep blue shadows
-                b = Math.min(255, b * 1.35);
-                g = Math.min(255, g * 1.12);
-                r = r * 0.85;
-            } else if (luma > 180) {
-                // Warm highlights with halation
-                r = Math.min(255, r * 1.25);
+                // Sombras azules
+                b = Math.min(255, b * 1.20);
                 g = Math.min(255, g * 1.08);
+                r = r * 0.90;
+            } else if (luma > 170) {
+                // Highlights cálidos
+                r = Math.min(255, r * 1.15);
+                g = Math.min(255, g * 1.05);
             }
 
-            // Red halation in bright areas
+            // Halación roja sutil en áreas brillantes
             if (luma > 200) {
-                r = Math.min(255, r * 1.3);
+                r = Math.min(255, r * 1.18);
             }
 
-            // High contrast
-            r = ((r / 255 - 0.5) * 1.35 + 0.5) * 255;
-            g = ((g / 255 - 0.5) * 1.35 + 0.5) * 255;
-            b = ((b / 255 - 0.5) * 1.35 + 0.5) * 255;
+            // Contraste cinematográfico
+            r = ((r / 255 - 0.5) * 1.15 + 0.5) * 255;
+            g = ((g / 255 - 0.5) * 1.15 + 0.5) * 255;
+            b = ((b / 255 - 0.5) * 1.15 + 0.5) * 255;
 
             data[i] = Math.max(0, Math.min(255, r));
             data[i + 1] = Math.max(0, Math.min(255, g));
@@ -507,17 +512,17 @@ class AnalogCamera {
             let g = data[i + 1];
             let b = data[i + 2];
 
-            // High contrast B&W
+            // B&W con alto contraste
             let gray = 0.299 * r + 0.587 * g + 0.114 * b;
 
-            // Crushed blacks, blown highlights
-            gray = ((gray / 255 - 0.5) * 1.45 + 0.5) * 255;
+            // Alto contraste característico
+            gray = ((gray / 255 - 0.5) * 1.30 + 0.5) * 255;
             gray = Math.max(0, Math.min(255, gray));
 
-            // Warm sepia tone
-            data[i] = Math.min(255, gray * 1.08);
-            data[i + 1] = Math.min(255, gray * 1.02);
-            data[i + 2] = gray * 0.88;
+            // Tono sepia cálido sutil
+            data[i] = Math.min(255, gray * 1.06);
+            data[i + 1] = Math.min(255, gray * 1.01);
+            data[i + 2] = gray * 0.90;
         }
     }
 
@@ -530,33 +535,33 @@ class AnalogCamera {
 
             const luma = 0.299 * r + 0.587 * g + 0.114 * b;
 
-            // EXTREME saturation and warmth (like reference image 3)
+            // Colores saturados y punchy
             const avg = (r + g + b) / 3;
-            r = r * 1.45 - avg * 0.45;
-            g = g * 1.35 - avg * 0.35;
-            b = b * 1.25 - avg * 0.25;
+            r = r * 1.25 - avg * 0.25;
+            g = g * 1.20 - avg * 0.20;
+            b = b * 1.15 - avg * 0.15;
 
-            // Strong yellow/orange cast in highlights
-            if (luma > 120) {
-                r = Math.min(255, r * 1.2);
-                g = Math.min(255, g * 1.12);
-                b = b * 0.85;
+            // Naranja/amarillo en highlights
+            if (luma > 130) {
+                r = Math.min(255, r * 1.12);
+                g = Math.min(255, g * 1.08);
+                b = b * 0.90;
             }
 
-            // Green in shadows
-            if (luma < 100) {
-                g = Math.min(255, g * 1.15);
+            // Verde en sombras
+            if (luma < 90) {
+                g = Math.min(255, g * 1.10);
             }
 
-            // High contrast punchy look
-            r = ((r / 255 - 0.5) * 1.3 + 0.5) * 255;
-            g = ((g / 255 - 0.5) * 1.3 + 0.5) * 255;
-            b = ((b / 255 - 0.5) * 1.3 + 0.5) * 255;
+            // Contraste punchy
+            r = ((r / 255 - 0.5) * 1.18 + 0.5) * 255;
+            g = ((g / 255 - 0.5) * 1.18 + 0.5) * 255;
+            b = ((b / 255 - 0.5) * 1.18 + 0.5) * 255;
 
-            // Lift shadows
-            r = r + (255 - r) * 0.06;
-            g = g + (255 - g) * 0.05;
-            b = b + (255 - b) * 0.04;
+            // Lift shadows leve
+            r = r + (255 - r) * 0.05;
+            g = g + (255 - g) * 0.04;
+            b = b + (255 - b) * 0.03;
 
             data[i] = Math.max(0, Math.min(255, r));
             data[i + 1] = Math.max(0, Math.min(255, g));
@@ -571,25 +576,25 @@ class AnalogCamera {
             let g = data[i + 1];
             let b = data[i + 2];
 
-            // Extreme cross-process - swap channels aggressively
-            const newR = r * 0.5 + g * 0.3 + b * 0.2;
-            const newG = r * 0.2 + g * 0.4 + b * 0.4;
+            // Cross-process moderado - mezcla de canales
+            const newR = r * 0.6 + g * 0.3 + b * 0.1;
+            const newG = r * 0.2 + g * 0.5 + b * 0.3;
             const newB = r * 0.3 + g * 0.2 + b * 0.5;
 
-            // Strong magenta/purple cast
-            r = Math.min(255, newR * 1.25);
-            g = newG * 0.85;
-            b = Math.min(255, newB * 1.35);
+            // Tinte magenta/púrpura
+            r = Math.min(255, newR * 1.15);
+            g = newG * 0.90;
+            b = Math.min(255, newB * 1.20);
 
-            // Extreme contrast and saturation
-            r = ((r / 255 - 0.5) * 1.55 + 0.5) * 255;
-            g = ((g / 255 - 0.5) * 1.55 + 0.5) * 255;
-            b = ((b / 255 - 0.5) * 1.55 + 0.5) * 255;
+            // Alto contraste y saturación
+            r = ((r / 255 - 0.5) * 1.35 + 0.5) * 255;
+            g = ((g / 255 - 0.5) * 1.35 + 0.5) * 255;
+            b = ((b / 255 - 0.5) * 1.35 + 0.5) * 255;
 
-            // Faded blacks
-            r = r + (255 - r) * 0.12;
-            g = g + (255 - g) * 0.1;
-            b = b + (255 - b) * 0.15;
+            // Negros faded
+            r = r + (255 - r) * 0.10;
+            g = g + (255 - g) * 0.08;
+            b = b + (255 - b) * 0.12;
 
             data[i] = Math.max(0, Math.min(255, r));
             data[i + 1] = Math.max(0, Math.min(255, g));
