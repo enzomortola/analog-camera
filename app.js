@@ -78,6 +78,23 @@ class AnalogCamera {
         this.galleryBtn.addEventListener('click', () => this.openGallery());
         this.closeGalleryBtn.addEventListener('click', () => this.closeGallery());
 
+        // Settings panel
+        const settingsBtn = document.getElementById('settingsBtn');
+        const settingsPanel = document.getElementById('settingsPanel');
+        const closeSettings = document.getElementById('closeSettings');
+
+        if (settingsBtn && settingsPanel) {
+            settingsBtn.addEventListener('click', () => {
+                settingsPanel.classList.toggle('active');
+            });
+        }
+
+        if (closeSettings && settingsPanel) {
+            closeSettings.addEventListener('click', () => {
+                settingsPanel.classList.remove('active');
+            });
+        }
+
         // Orientation change
         window.addEventListener('orientationchange', () => {
             setTimeout(() => {
@@ -199,10 +216,16 @@ class AnalogCamera {
 
     updateCropFrame() {
         const container = document.getElementById('cameraContainer');
-        const cropFrame = document.getElementById('cropFrame');
-        if (!container || !cropFrame) return;
+        const overlayTop = document.querySelector('.crop-overlay-top');
+        const overlayBottom = document.querySelector('.crop-overlay-bottom');
+        const overlayLeft = document.querySelector('.crop-overlay-left');
+        const overlayRight = document.querySelector('.crop-overlay-right');
 
-        const containerRect = container.getBoundingClientRect();
+        if (!container || !overlayTop) return;
+
+        const containerWidth = window.innerWidth;
+        const containerHeight = window.innerHeight;
+
         const ratios = {
             '3/2': 3 / 2,
             '4/3': 4 / 3,
@@ -217,29 +240,48 @@ class AnalogCamera {
             targetRatio = 1 / targetRatio;
         }
 
-        const containerRatio = containerRect.width / containerRect.height;
+        const containerRatio = containerWidth / containerHeight;
 
-        let frameWidth, frameHeight;
+        // Calcular dimensiones del área visible (donde NO hay overlays)
+        let visibleWidth, visibleHeight;
+        let offsetTop = 0, offsetBottom = 0, offsetLeft = 0, offsetRight = 0;
 
         if (containerRatio > targetRatio) {
-            // Container es más ancho, limitar por altura
-            frameHeight = containerRect.height;
-            frameWidth = frameHeight * targetRatio;
+            // Container más ancho que el ratio objetivo
+            // → Overlays a los lados (left/right)
+            visibleHeight = containerHeight;
+            visibleWidth = visibleHeight * targetRatio;
+
+            const totalHorizontalBlack = containerWidth - visibleWidth;
+            offsetLeft = totalHorizontalBlack / 2;
+            offsetRight = totalHorizontalBlack / 2;
+
+            overlayTop.style.height = '0';
+            overlayBottom.style.height = '0';
+            overlayLeft.style.width = `${offsetLeft}px`;
+            overlayRight.style.width = `${offsetRight}px`;
         } else {
-            // Container es más alto, limitar por ancho
-            frameWidth = containerRect.width;
-            frameHeight = frameWidth / targetRatio;
+            // Container más alto que el ratio objetivo
+            // → Overlays arriba/abajo (top/bottom)
+            visibleWidth = containerWidth;
+            visibleHeight = visibleWidth / targetRatio;
+
+            const totalVerticalBlack = containerHeight - visibleHeight;
+            offsetTop = totalVerticalBlack / 2;
+            offsetBottom = totalVerticalBlack / 2;
+
+            overlayTop.style.height = `${offsetTop}px`;
+            overlayBottom.style.height = `${offsetBottom}px`;
+            overlayLeft.style.width = '0';
+            overlayRight.style.width = '0';
         }
 
-        cropFrame.style.width = `${frameWidth}px`;
-        cropFrame.style.height = `${frameHeight}px`;
-
-        // Guardar dimensiones del frame para usar en capturePhoto
+        // Guardar dimensiones para usar en capturePhoto
         this.cropFrameDimensions = {
-            width: frameWidth,
-            height: frameHeight,
-            containerWidth: containerRect.width,
-            containerHeight: containerRect.height,
+            width: visibleWidth,
+            height: visibleHeight,
+            containerWidth: containerWidth,
+            containerHeight: containerHeight,
             targetRatio: targetRatio
         };
     }
