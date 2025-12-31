@@ -1,6 +1,6 @@
 {
-    "name": "Analog Camera",
-    "short_name": "AnalogCam",
+    "name": "Camara Solcito",
+    "short_name": "Camara Solcito",
     "description": "Cámara con filtros de película analógica",
     "start_url": "/analog-camera/",
     "display": "standalone",
