@@ -32,6 +32,7 @@
         <div class="camera-container" id="cameraContainer">
             <video id="videoElement" autoplay playsinline></video>
             <canvas id="previewCanvas"></canvas>
+            <div class="crop-frame" id="cropFrame"></div>
             <div class="film-grain"></div>
             <div class="vignette"></div>
             <div class="light-leak" id="lightLeak"></div>
@@ -100,9 +101,14 @@
             <button class="control-btn" id="switchCamera">
                 <span>🔄</span>
             </button>
-            <button class="shutter-btn" id="captureBtn">
-                <div class="shutter-inner"></div>
-            </button>
+            <div class="capture-group">
+                <button class="mode-toggle" id="modeToggle">
+                    <span class="mode-icon">📷</span>
+                </button>
+                <button class="shutter-btn" id="captureBtn">
+                    <div class="shutter-inner"></div>
+                </button>
+            </div>
             <button class="control-btn" id="galleryBtn">
                 <span>🖼️</span>
             </button>
