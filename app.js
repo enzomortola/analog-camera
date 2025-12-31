@@ -499,14 +499,47 @@ class AnalogCamera {
         this.lightLeak.classList.add('active');
         setTimeout(() => this.lightLeak.classList.remove('active'), 800);
 
-        // Create capture canvas with date stamp
+        // Calculate final dimensions based on aspect ratio
+        const ratios = {
+            '3/2': 3 / 2,
+            '4/3': 4 / 3,
+            '1/1': 1,
+            '16/9': 16 / 9
+        };
+
+        const targetRatio = ratios[this.currentRatio];
+        const sourceWidth = this.canvas.width;
+        const sourceHeight = this.canvas.height;
+        const sourceRatio = sourceWidth / sourceHeight;
+
+        let cropX = 0;
+        let cropY = 0;
+        let cropWidth = sourceWidth;
+        let cropHeight = sourceHeight;
+
+        // Calculate crop dimensions to match target ratio
+        if (sourceRatio > targetRatio) {
+            // Source is wider, crop width
+            cropWidth = sourceHeight * targetRatio;
+            cropX = (sourceWidth - cropWidth) / 2;
+        } else {
+            // Source is taller, crop height
+            cropHeight = sourceWidth / targetRatio;
+            cropY = (sourceHeight - cropHeight) / 2;
+        }
+
+        // Create capture canvas with correct aspect ratio
         const captureCanvas = document.createElement('canvas');
-        captureCanvas.width = this.canvas.width;
-        captureCanvas.height = this.canvas.height;
+        captureCanvas.width = cropWidth;
+        captureCanvas.height = cropHeight;
         const captureCtx = captureCanvas.getContext('2d');
 
-        // Draw filtered image
-        captureCtx.drawImage(this.canvas, 0, 0);
+        // Draw cropped filtered image
+        captureCtx.drawImage(
+            this.canvas,
+            cropX, cropY, cropWidth, cropHeight,
+            0, 0, cropWidth, cropHeight
+        );
 
         // Add film grain overlay
         this.addFilmGrain(captureCtx, captureCanvas.width, captureCanvas.height);
@@ -523,6 +556,7 @@ class AnalogCamera {
             id: Date.now(),
             data: imageData,
             filter: this.currentFilter,
+            ratio: this.currentRatio,
             date: new Date().toISOString()
         });
 
@@ -550,7 +584,7 @@ class AnalogCamera {
         const data = imageData.data;
 
         for (let i = 0; i < data.length; i += 4) {
-            const noise = (Math.random() - 0.5) * 20;
+            const noise = (Math.random() - 0.5) * 12;
             data[i] = Math.max(0, Math.min(255, data[i] + noise));
             data[i + 1] = Math.max(0, Math.min(255, data[i + 1] + noise));
             data[i + 2] = Math.max(0, Math.min(255, data[i + 2] + noise));
